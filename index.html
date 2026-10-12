@@ -14,16 +14,22 @@
   body {
     margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
     font-family: "BIZ UDPGothic", "Yu Gothic UI", "Hiragino Sans", Meiryo, system-ui, sans-serif;
-    line-height: 1.5; display: flex; justify-content: center; padding: 16px 14px 40px;
+    line-height: 1.5; display: flex; justify-content: center; padding: 12px 14px 32px;
   }
   main { width: 100%; max-width: 760px; }
-  header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
-  h1 { font-size: 1.6rem; margin: 0; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  h1 { font-size: 1.4rem; margin: 0; }
+  /* クイズ中: 画面の高さちょうどに収め、写真が余った高さを使う */
+  body.playing { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
+  body.playing main { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+  body.playing header { flex: none; }
+  body.playing #game { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 14px; }
   .card {
-    background: var(--card); border: 3px solid var(--border); border-radius: 20px; padding: 20px;
+    background: var(--card); border: 3px solid var(--border); border-radius: 20px; padding: 18px;
     box-shadow: 0 6px 18px rgba(0, 0, 0, .10);
   }
   .hidden { display: none !important; }
+  .invisible { visibility: hidden; }
   p { margin: 0 0 12px; }
 
   button {
@@ -33,47 +39,56 @@
   button:hover:not(:disabled) { border-color: var(--accent); }
   button:focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
   button:disabled { cursor: default; }
-  .primary { background: var(--accent); border-color: var(--accent); color: #fff; width: 100%; margin-top: 16px; font-size: 1.3rem; min-height: 72px; }
+  .primary { background: var(--accent); border-color: var(--accent); color: #fff; width: 100%; margin-top: 16px; font-size: 1.3rem; min-height: 68px; }
   .primary:hover:not(:disabled) { background: #1e40af; border-color: #1e40af; }
   .secondary { width: 100%; margin-top: 14px; font-size: 1.2rem; }
+  .actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 14px; }
+  .actions button { margin-top: 0; }
   #soundBtn { font-size: 1rem; min-height: 52px; padding: 8px 12px; white-space: nowrap; }
 
-  .status { display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 700; margin-bottom: 12px; }
-  .photo-wrap { width: min(100%, 55vh); aspect-ratio: 1 / 1; margin: 0 auto; border-radius: 16px; overflow: hidden; background: #ddd; border: 3px solid var(--border); }
+  .status { flex: none; display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 700; margin-bottom: 8px; }
+  /* 写真エリアが残りの高さを使い、写真は常に正方形（エリアに収まる最大サイズ） */
+  .photo-area { flex: 1 1 0; min-height: 0; container-type: size; display: flex; align-items: center; justify-content: center; }
+  .photo-wrap {
+    height: 100%; max-width: 100%; aspect-ratio: 1 / 1;
+    width: min(100cqw, 100cqh); height: min(100cqw, 100cqh);
+    border-radius: 16px; overflow: hidden; background: #ddd; border: 3px solid var(--border);
+  }
   .photo-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; display: block; }
-  .question { text-align: center; font-size: 1.4rem; font-weight: 800; margin: 14px 0 4px; }
+  .question { flex: none; text-align: center; font-size: 1.3rem; font-weight: 800; margin: 8px 0 0; }
 
-  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
-  .choices button { font-size: 1.8rem; min-height: 92px; }
-  @media (max-width: 520px) { .choices { grid-template-columns: 1fr; } }
+  .choices { flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+  .choices button { font-size: 1.8rem; min-height: 84px; }
+  @media (max-width: 520px) { .choices button { font-size: 1.4rem; min-height: 72px; } }
   .choices button.correct { border-color: var(--ok); background: #dcfce7; color: #14532d; }
   .choices button.wrong { border-color: var(--ng); background: #fee2e2; color: #7f1d1d; }
 
-  .feedback { text-align: center; font-weight: 800; font-size: 1.7rem; margin-top: 14px; min-height: 2.6rem; }
+  .feedback { flex: none; text-align: center; font-weight: 800; font-size: 1.5rem; margin-top: 8px; min-height: 2.2rem; line-height: 1.4; }
+  #game .primary { flex: none; margin-top: 8px; }
   .feedback.ok { color: var(--ok); }
   .feedback.ng { color: var(--ng); }
 
-  .score { font-size: 2.6rem; font-weight: 800; text-align: center; color: var(--accent); margin: 4px 0 10px; }
+  .score { font-size: 2.4rem; font-weight: 800; text-align: center; color: var(--accent); margin: 2px 0 8px; }
   .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .stat { background: #f1f5f9; border-radius: 14px; padding: 12px 8px; text-align: center; }
+  .stat { background: #f1f5f9; border-radius: 14px; padding: 8px; text-align: center; }
   .stat-label { display: block; font-size: 1rem; color: var(--muted); }
-  .stat-value { display: block; font-size: 1.8rem; font-weight: 800; }
-  .comment { text-align: center; font-size: 1.4rem; font-weight: 800; margin: 16px 0 4px; }
+  .stat-value { display: block; font-size: 1.7rem; font-weight: 800; }
+  .comment { text-align: center; font-size: 1.3rem; font-weight: 800; margin: 10px 0 0; }
 
   .award {
-    margin: 0 0 18px; padding: 22px 14px; text-align: center; border-radius: 18px;
+    margin: 0 0 14px; padding: 12px 14px; text-align: center; border-radius: 18px;
     border: 8px double var(--gold); background: linear-gradient(135deg, #fff9db, #ffe9a8);
     box-shadow: 0 0 0 4px #fff, 0 8px 24px rgba(212, 160, 23, .45);
     animation: pop .8s ease-out;
   }
-  .award .title { font-size: 2.4rem; font-weight: 800; letter-spacing: .3em; color: #7a4e00; }
-  .award .crown { font-size: 3.6rem; line-height: 1.1; }
-  .award .body { font-size: 1.4rem; font-weight: 700; color: #4a3200; margin-top: 8px; }
+  .award .title { font-size: 2rem; font-weight: 800; letter-spacing: .3em; color: #7a4e00; }
+  .award .crown { font-size: 3rem; line-height: 1.1; }
+  .award .body { font-size: 1.2rem; font-weight: 700; color: #4a3200; margin-top: 4px; }
   @keyframes pop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); } }
   .confetti { position: fixed; top: -30px; font-size: 1.6rem; pointer-events: none; z-index: 10; animation: fall linear forwards; }
   @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
 
-  h2 { font-size: 1.5rem; margin: 22px 0 10px; }
+  h2 { font-size: 1.5rem; margin: 26px 0 10px; padding-top: 14px; border-top: 3px dashed var(--border); }
   .review { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
   .review li { border: 3px solid var(--ng); border-radius: 16px; padding: 12px; background: #fff5f5; }
   .review img { width: 100%; max-width: 280px; aspect-ratio: 1 / 1; object-fit: cover; object-position: center 30%; border-radius: 12px; display: block; margin: 0 auto 10px; }
@@ -104,11 +119,11 @@
 
   <section id="game" class="card hidden">
     <div class="status"><span id="progress"></span><span id="scoreNow"></span></div>
-    <div class="photo-wrap"><img id="photo" alt="この人は誰でしょう"></div>
+    <div class="photo-area"><div class="photo-wrap"><img id="photo" alt="この人は誰でしょう"></div></div>
     <div class="question">この人は誰でしょう？</div>
     <div id="choices" class="choices"></div>
     <div id="feedback" class="feedback" aria-live="polite"></div>
-    <button id="nextBtn" class="primary hidden"></button>
+    <button id="nextBtn" class="primary invisible"></button>
   </section>
 
   <section id="result" class="card hidden">
@@ -124,17 +139,19 @@
     </div>
     <div id="comment" class="comment"></div>
 
+    <div class="actions">
+      <button id="retryWrongBtn" class="primary hidden">間違えた問題をもう一度やる</button>
+      <button id="retryBtn" class="primary">最初からもう一度</button>
+    </div>
+
     <h2>間違えた問題の振り返り</h2>
     <div id="allGood" class="all-good hidden">間違えた問題はありません。すばらしい！</div>
     <ul id="wrongList" class="review"></ul>
-    <button id="retryWrongBtn" class="primary hidden">間違えた問題をもう一度やる</button>
 
     <details id="goodDetails" class="hidden">
       <summary>正解した問題を見る</summary>
       <ul id="goodList" class="review good"></ul>
     </details>
-
-    <button id="retryBtn" class="secondary">最初からもう一度</button>
   </section>
 </main>
 
@@ -156,6 +173,7 @@
     ['start', 'game', 'result'].forEach(function (s) {
       $(s).classList.toggle('hidden', s !== id);
     });
+    document.body.classList.toggle('playing', id === 'game');
     window.scrollTo(0, 0);
   }
   // Google ドライブの写真は url を持つ。data/ の写真はファイル名から作る
@@ -179,7 +197,7 @@
     var fb = $('feedback');
     fb.textContent = '';
     fb.className = 'feedback';
-    $('nextBtn').classList.add('hidden');
+    $('nextBtn').classList.add('invisible');
     var box = $('choices');
     box.textContent = '';
     q.choices.forEach(function (name) {
@@ -215,7 +233,7 @@
     $('scoreNow').textContent = '正解 ' + score + ' 問';
     var last = index === questions.length - 1;
     $('nextBtn').textContent = last ? '結果を見る' : '次の問題へ';
-    $('nextBtn').classList.remove('hidden');
+    $('nextBtn').classList.remove('invisible');
     $('nextBtn').focus();
   }
 
@@ -333,7 +351,7 @@
     $('soundBtn').textContent = m ? '🔇 音なし' : '🔊 音あり';
     $('soundBtn').setAttribute('aria-pressed', String(m));
     if (m) sound.stopThinking();
-    else if (!$('game').classList.contains('hidden') && $('nextBtn').classList.contains('hidden')) sound.startThinking();
+    else if (!$('game').classList.contains('hidden') && $('nextBtn').classList.contains('invisible')) sound.startThinking();
   });
   $('startBtn').addEventListener('click', startNew);
   $('reloadBtn').addEventListener('click', loadPhotos);
