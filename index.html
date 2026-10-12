@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>人物当てクイズ</title>
+<style>
+  :root {
+    --bg: #fdf8ee; --card: #ffffff; --text: #1b1b1b; --muted: #4a4a4a;
+    --accent: #1d4ed8; --ok: #15803d; --ng: #b91c1c; --border: #b8b8b8; --gold: #d4a017;
+  }
+  * { box-sizing: border-box; }
+  html { font-size: 26px; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+    font-family: "BIZ UDPGothic", "Yu Gothic UI", "Hiragino Sans", Meiryo, system-ui, sans-serif;
+    line-height: 1.5; display: flex; justify-content: center; padding: 16px 14px 40px;
+  }
+  main { width: 100%; max-width: 760px; }
+  header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+  h1 { font-size: 1.6rem; margin: 0; }
+  .card {
+    background: var(--card); border: 3px solid var(--border); border-radius: 20px; padding: 20px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .10);
+  }
+  .hidden { display: none !important; }
+  p { margin: 0 0 12px; }
+
+  button {
+    font: inherit; font-weight: 700; cursor: pointer; color: var(--text); background: var(--card);
+    border: 3px solid var(--border); border-radius: 16px; padding: 14px 12px; min-height: 64px;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
+  button:disabled { cursor: default; }
+  .primary { background: var(--accent); border-color: var(--accent); color: #fff; width: 100%; margin-top: 16px; font-size: 1.3rem; min-height: 72px; }
+  .primary:hover:not(:disabled) { background: #1e40af; border-color: #1e40af; }
+  .secondary { width: 100%; margin-top: 14px; font-size: 1.2rem; }
+  #soundBtn { font-size: 1rem; min-height: 52px; padding: 8px 12px; white-space: nowrap; }
+
+  .status { display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 700; margin-bottom: 12px; }
+  .photo-wrap { width: min(100%, 55vh); aspect-ratio: 1 / 1; margin: 0 auto; border-radius: 16px; overflow: hidden; background: #ddd; border: 3px solid var(--border); }
+  .photo-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; display: block; }
+  .question { text-align: center; font-size: 1.4rem; font-weight: 800; margin: 14px 0 4px; }
+
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
+  .choices button { font-size: 1.8rem; min-height: 92px; }
+  @media (max-width: 520px) { .choices { grid-template-columns: 1fr; } }
+  .choices button.correct { border-color: var(--ok); background: #dcfce7; color: #14532d; }
+  .choices button.wrong { border-color: var(--ng); background: #fee2e2; color: #7f1d1d; }
+
+  .feedback { text-align: center; font-weight: 800; font-size: 1.7rem; margin-top: 14px; min-height: 2.6rem; }
+  .feedback.ok { color: var(--ok); }
+  .feedback.ng { color: var(--ng); }
+
+  .score { font-size: 2.6rem; font-weight: 800; text-align: center; color: var(--accent); margin: 4px 0 10px; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat { background: #f1f5f9; border-radius: 14px; padding: 12px 8px; text-align: center; }
+  .stat-label { display: block; font-size: 1rem; color: var(--muted); }
+  .stat-value { display: block; font-size: 1.8rem; font-weight: 800; }
+  .comment { text-align: center; font-size: 1.4rem; font-weight: 800; margin: 16px 0 4px; }
+
+  .award {
+    margin: 0 0 18px; padding: 22px 14px; text-align: center; border-radius: 18px;
+    border: 8px double var(--gold); background: linear-gradient(135deg, #fff9db, #ffe9a8);
+    box-shadow: 0 0 0 4px #fff, 0 8px 24px rgba(212, 160, 23, .45);
+    animation: pop .8s ease-out;
+  }
+  .award .title { font-size: 2.4rem; font-weight: 800; letter-spacing: .3em; color: #7a4e00; }
+  .award .crown { font-size: 3.6rem; line-height: 1.1; }
+  .award .body { font-size: 1.4rem; font-weight: 700; color: #4a3200; margin-top: 8px; }
+  @keyframes pop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); } }
+  .confetti { position: fixed; top: -30px; font-size: 1.6rem; pointer-events: none; z-index: 10; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+  h2 { font-size: 1.5rem; margin: 22px 0 10px; }
+  .review { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+  .review li { border: 3px solid var(--ng); border-radius: 16px; padding: 12px; background: #fff5f5; }
+  .review img { width: 100%; max-width: 280px; aspect-ratio: 1 / 1; object-fit: cover; object-position: center 30%; border-radius: 12px; display: block; margin: 0 auto 10px; }
+  .review .line { font-size: 1.4rem; font-weight: 700; text-align: center; }
+  .review .right { color: var(--ok); font-size: 2.2rem; font-weight: 800; }
+  .review .mine { color: var(--ng); font-size: 1.1rem; }
+  .review.good li { border-color: var(--ok); background: #f0fdf4; }
+  details { margin-top: 18px; }
+  summary { font-size: 1.3rem; font-weight: 800; cursor: pointer; padding: 10px 0; }
+  .all-good { text-align: center; font-size: 1.4rem; font-weight: 800; color: var(--ok); }
+  .error { color: var(--ng); font-weight: 700; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>人物当てクイズ</h1>
+    <button id="soundBtn" aria-pressed="false">🔊 音あり</button>
+  </header>
+
+  <section id="start" class="card">
+    <p>写真の人物の名前を、4つの選択肢から選んでください。</p>
+    <p id="info">写真を読み込んでいます…</p>
+    <p id="error" class="error"></p>
+    <button id="startBtn" class="primary" disabled>スタート</button>
+    <button id="reloadBtn" class="secondary hidden">もう一度読み込む</button>
+  </section>
+
+  <section id="game" class="card hidden">
+    <div class="status"><span id="progress"></span><span id="scoreNow"></span></div>
+    <div class="photo-wrap"><img id="photo" alt="この人は誰でしょう"></div>
+    <div class="question">この人は誰でしょう？</div>
+    <div id="choices" class="choices"></div>
+    <div id="feedback" class="feedback" aria-live="polite"></div>
+    <button id="nextBtn" class="primary hidden"></button>
+  </section>
+
+  <section id="result" class="card hidden">
+    <div id="award" class="award hidden">
+      <div class="crown">🏆</div>
+      <div class="title">表彰状</div>
+      <div class="body">全問正解、おめでとうございます！<br>あなたは人物当て名人です！</div>
+    </div>
+    <div id="finalScore" class="score"></div>
+    <div class="stats">
+      <div class="stat"><span class="stat-label">正解数</span><span id="statCorrect" class="stat-value"></span></div>
+      <div class="stat"><span class="stat-label">正答率</span><span id="statPercent" class="stat-value"></span></div>
+    </div>
+    <div id="comment" class="comment"></div>
+
+    <h2>間違えた問題の振り返り</h2>
+    <div id="allGood" class="all-good hidden">間違えた問題はありません。すばらしい！</div>
+    <ul id="wrongList" class="review"></ul>
+    <button id="retryWrongBtn" class="primary hidden">間違えた問題をもう一度やる</button>
+
+    <details id="goodDetails" class="hidden">
+      <summary>正解した問題を見る</summary>
+      <ul id="goodList" class="review good"></ul>
+    </details>
+
+    <button id="retryBtn" class="secondary">最初からもう一度</button>
+  </section>
+</main>
+
+<script src="quiz.js"></script>
+<script src="sound.js"></script>
+<script src="drive.js"></script>
+<script src="config.js"></script>
+<script src="manifest.js"></script>
+<script>
+(function () {
+  var QUESTION_COUNT = 10;
+  var $ = function (id) { return document.getElementById(id); };
+  var photos = [];
+  var people = [];
+  var sound = SoundFx.createSound(window.AudioContext || window.webkitAudioContext);
+  var questions = [], index = 0, score = 0, answers = [];
+
+  function show(id) {
+    ['start', 'game', 'result'].forEach(function (s) {
+      $(s).classList.toggle('hidden', s !== id);
+    });
+    window.scrollTo(0, 0);
+  }
+  // Google ドライブの写真は url を持つ。data/ の写真はファイル名から作る
+  function photoUrl(item) { return item.url || 'data/' + encodeURIComponent(item.file); }
+
+  function begin(qs) {
+    sound.unlock();
+    questions = qs;
+    index = 0; score = 0; answers = [];
+    show('game');
+    render();
+  }
+  function startNew() { begin(Quiz.buildQuestions(photos, QUESTION_COUNT, Math.random)); }
+  function startRetry() { begin(Quiz.retryQuestions(answers, people, Math.random)); }
+
+  function render() {
+    var q = questions[index];
+    $('progress').textContent = '第 ' + (index + 1) + ' 問 / 全 ' + questions.length + ' 問';
+    $('scoreNow').textContent = '正解 ' + score + ' 問';
+    $('photo').src = photoUrl(q);
+    var fb = $('feedback');
+    fb.textContent = '';
+    fb.className = 'feedback';
+    $('nextBtn').classList.add('hidden');
+    var box = $('choices');
+    box.textContent = '';
+    q.choices.forEach(function (name) {
+      var b = document.createElement('button');
+      b.textContent = name;
+      b.addEventListener('click', function () { answer(name, b); });
+      box.appendChild(b);
+    });
+    sound.startThinking();
+  }
+
+  function answer(name, clicked) {
+    sound.stopThinking();
+    var q = questions[index];
+    var ok = name === q.answer;
+    if (ok) score++;
+    answers.push({ file: q.file, url: q.url, answer: q.answer, picked: name, ok: ok });
+    Array.prototype.forEach.call($('choices').children, function (b) {
+      b.disabled = true;
+      if (b.textContent === q.answer) b.classList.add('correct');
+    });
+    var fb = $('feedback');
+    if (ok) {
+      sound.correct();
+      fb.textContent = '⭕ ピンポーン！ 正解です！';
+      fb.className = 'feedback ok';
+    } else {
+      sound.wrong();
+      clicked.classList.add('wrong');
+      fb.textContent = '❌ ブッブー… 正解は「' + q.answer + '」さんです';
+      fb.className = 'feedback ng';
+    }
+    $('scoreNow').textContent = '正解 ' + score + ' 問';
+    var last = index === questions.length - 1;
+    $('nextBtn').textContent = last ? '結果を見る' : '次の問題へ';
+    $('nextBtn').classList.remove('hidden');
+    $('nextBtn').focus();
+  }
+
+  function next() {
+    if (index === questions.length - 1) return finish();
+    index++;
+    render();
+  }
+
+  function reviewItem(a, withMine) {
+    var li = document.createElement('li');
+    var img = document.createElement('img');
+    img.src = photoUrl(a);
+    img.alt = a.answer;
+    var right = document.createElement('div');
+    right.className = 'line right';
+    right.textContent = '正解： ' + a.answer;
+    li.appendChild(img);
+    li.appendChild(right);
+    if (withMine) {
+      var mine = document.createElement('div');
+      mine.className = 'line mine';
+      mine.textContent = 'あなたの答え： ' + a.picked;
+      li.appendChild(mine);
+    }
+    return li;
+  }
+
+  function confetti() {
+    var marks = ['🎉', '🎊', '⭐', '✨', '🎈'];
+    for (var i = 0; i < 60; i++) {
+      var s = document.createElement('span');
+      s.className = 'confetti';
+      s.textContent = marks[i % marks.length];
+      s.style.left = Math.random() * 100 + 'vw';
+      s.style.animationDuration = (2.5 + Math.random() * 2.5) + 's';
+      s.style.animationDelay = (Math.random() * 1.5) + 's';
+      document.body.appendChild(s);
+      setTimeout(function (el) { el.remove(); }, 7500, s);
+    }
+  }
+
+  function finish() {
+    sound.stopThinking();
+    show('result');
+    var r = Quiz.summarize(score, questions.length);
+    var perfect = r.correct === r.total;
+    $('finalScore').textContent = r.points + ' 点 / ' + r.maxPoints + ' 点';
+    $('statCorrect').textContent = r.correct + ' / ' + r.total + ' 問';
+    $('statPercent').textContent = r.percent + ' %';
+    var rate = r.correct / r.total;
+    $('comment').textContent = perfect ? '全問正解！完璧です！'
+      : rate >= 0.7 ? 'お見事！かなりの人物通です'
+      : rate >= 0.4 ? 'まずまず。もう一度挑戦してみましょう'
+      : 'まだまだ！みんなの顔を覚えましょう';
+
+    $('award').classList.toggle('hidden', !perfect);
+    if (perfect) { sound.fanfare(); confetti(); }
+
+    var wrong = answers.filter(function (a) { return !a.ok; });
+    var good = answers.filter(function (a) { return a.ok; });
+    var wl = $('wrongList'), gl = $('goodList');
+    wl.textContent = ''; gl.textContent = '';
+    wrong.forEach(function (a) { wl.appendChild(reviewItem(a, true)); });
+    good.forEach(function (a) { gl.appendChild(reviewItem(a, false)); });
+    $('allGood').classList.toggle('hidden', wrong.length > 0);
+    $('retryWrongBtn').classList.toggle('hidden', wrong.length === 0);
+    $('goodDetails').classList.toggle('hidden', good.length === 0);
+    $('goodDetails').open = false;
+  }
+
+  // 写真の取得元: config.js に Google ドライブの設定があればドライブ、なければ data/ の写真
+  function driveConfigured() {
+    var c = window.QUIZ_CONFIG || {};
+    return !!(c.driveFolderId && c.apiKey);
+  }
+
+  function setPhotos(list) {
+    photos = list;
+    people = Quiz.uniquePeople(photos);
+    $('error').textContent = '';
+    if (people.length < Quiz.CHOICE_COUNT) {
+      $('info').textContent = '';
+      $('error').textContent = '写真が足りません。4人以上の写真が必要です（今は ' + people.length + ' 人分）。' +
+        '写真のファイル名は「名前_連番.jpg」にしてください。';
+      $('startBtn').disabled = true;
+      $('reloadBtn').classList.remove('hidden');
+      return;
+    }
+    $('info').textContent = '写真 ' + photos.length + ' 枚・' + people.length + ' 人の中から ' +
+      Math.min(QUESTION_COUNT, photos.length) + ' 問出題します。';
+    $('startBtn').disabled = false;
+    $('reloadBtn').classList.add('hidden');
+  }
+
+  function loadPhotos() {
+    $('startBtn').disabled = true;
+    $('reloadBtn').classList.add('hidden');
+    $('error').textContent = '';
+    if (!driveConfigured()) {
+      setPhotos(window.PHOTOS || []);
+      return;
+    }
+    $('info').textContent = '写真を読み込んでいます…';
+    DriveSource.listPhotos(window.QUIZ_CONFIG, window.fetch.bind(window)).then(setPhotos, function (e) {
+      $('info').textContent = '';
+      $('error').textContent = (e && e.message) || '写真を読み込めませんでした。';
+      $('reloadBtn').classList.remove('hidden');
+    });
+  }
+
+  $('soundBtn').addEventListener('click', function () {
+    var m = !sound.isMuted();
+    sound.setMuted(m);
+    $('soundBtn').textContent = m ? '🔇 音なし' : '🔊 音あり';
+    $('soundBtn').setAttribute('aria-pressed', String(m));
+    if (m) sound.stopThinking();
+    else if (!$('game').classList.contains('hidden') && $('nextBtn').classList.contains('hidden')) sound.startThinking();
+  });
+  $('startBtn').addEventListener('click', startNew);
+  $('reloadBtn').addEventListener('click', loadPhotos);
+  $('nextBtn').addEventListener('click', next);
+  $('retryBtn').addEventListener('click', startNew);
+  $('retryWrongBtn').addEventListener('click', startRetry);
+  loadPhotos();
+})();
+</script>
+</body>
+</html>

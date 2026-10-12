@@ -1,0 +1,5 @@
+# 人物写真と作業用フォルダ・生成ファイルはコミットしない
+data/
+tmp/
+manifest.js
+README.txt
