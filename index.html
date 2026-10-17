@@ -17,13 +17,15 @@
     line-height: 1.5; display: flex; justify-content: center; padding: 8px 14px 32px;
   }
   main { width: 100%; max-width: 760px; }
-  header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-  h1 { font-size: 1.4rem; margin: 0; }
+  header { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-bottom: 8px; }
   /* クイズ中: 画面の高さちょうどに収め、写真が余った高さを使う */
   body.playing { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
   body.playing main { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-  body.playing header { flex: none; }
-  body.playing #game { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 14px; }
+  body.playing { padding: 4px 6px; }
+  /* クイズ中は音ボタンを進行状況の行の中央に重ねて、縦の高さを写真に回す */
+  body.playing header { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); margin: 0; z-index: 5; }
+  body.playing #soundBtn { min-height: 36px; font-size: .8rem; padding: 2px 10px; }
+  body.playing #game { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 8px 10px; }
   .card {
     background: var(--card); border: 3px solid var(--border); border-radius: 20px; padding: 18px;
     box-shadow: 0 6px 18px rgba(0, 0, 0, .10);
@@ -46,7 +48,7 @@
   .actions button { margin-top: 0; }
   #soundBtn { font-size: 1rem; min-height: 48px; padding: 8px 12px; white-space: nowrap; }
 
-  .status { flex: none; display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 700; margin-bottom: 8px; white-space: nowrap; height: 1.8rem; line-height: 1.6; overflow: hidden; }
+  .status { flex: none; display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; white-space: nowrap; height: 1.8rem; line-height: 1.6; overflow: hidden; }
   /* 写真エリアが残りの高さを使い、写真は常に正方形（エリアに収まる最大サイズ） */
   .photo-area { flex: 1 1 0; min-height: 0; container-type: size; display: flex; align-items: center; justify-content: center; }
   .photo-wrap {
@@ -105,7 +107,6 @@
 <body>
 <main>
   <header>
-    <h1>人物当てクイズ</h1>
     <button id="soundBtn" aria-pressed="false">🔊 音あり</button>
   </header>
 
