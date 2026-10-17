@@ -14,10 +14,10 @@
   body {
     margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
     font-family: "BIZ UDPGothic", "Yu Gothic UI", "Hiragino Sans", Meiryo, system-ui, sans-serif;
-    line-height: 1.5; display: flex; justify-content: center; padding: 12px 14px 32px;
+    line-height: 1.5; display: flex; justify-content: center; padding: 8px 14px 32px;
   }
   main { width: 100%; max-width: 760px; }
-  header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
   h1 { font-size: 1.4rem; margin: 0; }
   /* クイズ中: 画面の高さちょうどに収め、写真が余った高さを使う */
   body.playing { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
@@ -44,9 +44,9 @@
   .secondary { width: 100%; margin-top: 14px; font-size: 1.2rem; }
   .actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 14px; }
   .actions button { margin-top: 0; }
-  #soundBtn { font-size: 1rem; min-height: 52px; padding: 8px 12px; white-space: nowrap; }
+  #soundBtn { font-size: 1rem; min-height: 48px; padding: 8px 12px; white-space: nowrap; }
 
-  .status { flex: none; display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 700; margin-bottom: 8px; }
+  .status { flex: none; display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 700; margin-bottom: 8px; white-space: nowrap; height: 1.8rem; line-height: 1.6; overflow: hidden; }
   /* 写真エリアが残りの高さを使い、写真は常に正方形（エリアに収まる最大サイズ） */
   .photo-area { flex: 1 1 0; min-height: 0; container-type: size; display: flex; align-items: center; justify-content: center; }
   .photo-wrap {
@@ -55,16 +55,16 @@
     border-radius: 16px; overflow: hidden; background: #ddd; border: 3px solid var(--border);
   }
   .photo-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; display: block; }
-  .question { flex: none; text-align: center; font-size: 1.3rem; font-weight: 800; margin: 8px 0 0; }
 
-  .choices { flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
-  .choices button { font-size: 1.8rem; min-height: 84px; }
-  @media (max-width: 520px) { .choices button { font-size: 1.4rem; min-height: 72px; } }
+  .choices { flex: none; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 78px; gap: 12px; margin-top: 8px; }
+  .choices button { font-size: 1.8rem; height: 78px; min-height: 0; padding: 0 6px; line-height: 1.2; overflow: hidden; overflow-wrap: anywhere; }
+  @media (max-width: 520px) { .choices { grid-auto-rows: 68px; } .choices button { font-size: 1.4rem; height: 68px; } }
   .choices button.correct { border-color: var(--ok); background: #dcfce7; color: #14532d; }
   .choices button.wrong { border-color: var(--ng); background: #fee2e2; color: #7f1d1d; }
 
-  .feedback { flex: none; text-align: center; font-weight: 800; font-size: 1.5rem; margin-top: 8px; min-height: 2.2rem; line-height: 1.4; }
-  #game .primary { flex: none; margin-top: 8px; }
+  .feedback { flex: none; text-align: center; font-weight: 800; font-size: clamp(.95rem, 4.8vw, 1.4rem); margin-top: 8px; height: 2.2rem; line-height: 2.2rem; white-space: nowrap; overflow: hidden; }
+  .feedback.prompt { color: var(--text); }
+  #game .primary { flex: none; margin-top: 8px; height: 64px; min-height: 0; }
   .feedback.ok { color: var(--ok); }
   .feedback.ng { color: var(--ng); }
 
@@ -120,9 +120,8 @@
   <section id="game" class="card hidden">
     <div class="status"><span id="progress"></span><span id="scoreNow"></span></div>
     <div class="photo-area"><div class="photo-wrap"><img id="photo" alt="この人は誰でしょう"></div></div>
-    <div class="question">この人は誰でしょう？</div>
+    <div id="feedback" class="feedback prompt" aria-live="polite">この人は誰でしょう？</div>
     <div id="choices" class="choices"></div>
-    <div id="feedback" class="feedback" aria-live="polite"></div>
     <button id="nextBtn" class="primary invisible"></button>
   </section>
 
@@ -195,8 +194,8 @@
     $('scoreNow').textContent = '正解 ' + score + ' 問';
     $('photo').src = photoUrl(q);
     var fb = $('feedback');
-    fb.textContent = '';
-    fb.className = 'feedback';
+    fb.textContent = 'この人は誰でしょう？';
+    fb.className = 'feedback prompt';
     $('nextBtn').classList.add('invisible');
     var box = $('choices');
     box.textContent = '';
@@ -227,7 +226,7 @@
     } else {
       sound.wrong();
       clicked.classList.add('wrong');
-      fb.textContent = '❌ ブッブー… 正解は「' + q.answer + '」さんです';
+      fb.textContent = '❌ ブッブー！ 正解は「' + q.answer + '」';
       fb.className = 'feedback ng';
     }
     $('scoreNow').textContent = '正解 ' + score + ' 問';
@@ -305,10 +304,16 @@
     $('goodDetails').open = false;
   }
 
-  // 写真の取得元: config.js に Google ドライブの設定があればドライブ、なければ data/ の写真
+  // 写真の取得元: ローカル（localhost・file://）では data/ の写真、
+  // デプロイ先では config.js に Google ドライブの設定があればドライブ（なければ data/）
+  function isLocalHost() {
+    var h = location.hostname;
+    return location.protocol === 'file:' || h === 'localhost' || h === '127.0.0.1' || h === '[::1]';
+  }
+
   function driveConfigured() {
     var c = window.QUIZ_CONFIG || {};
-    return !!(c.driveFolderId && c.apiKey);
+    return !isLocalHost() && !!(c.driveFolderId && c.apiKey);
   }
 
   function setPhotos(list) {
